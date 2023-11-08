@@ -1,3 +1,6 @@
 [submodule "flash-attention"]
 	path = flash-attention
 	url = https://github.com/HazyResearch/flash-attention.git
+[submodule "hyena-dna-main-repo"]
+	path = hyena-dna-main-repo
+	url = https://github.com/Jaureguy760/HyenaDNA_collab.git
