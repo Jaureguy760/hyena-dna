@@ -7,6 +7,7 @@ data.tar.gz
 .vscode
 .checkpoints/
 *.svg
+memray*
 
 .DS_Store
 .idea/

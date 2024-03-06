@@ -20,7 +20,7 @@ task:
 
 trainer:
   accelerator: gpu
-  devices: 4
+  devices: 3
   num_nodes: 1
   strategy: ddp
   accumulate_grad_batches: ${div_up:${train.global_batch_size}, ${eval:${trainer.devices} * ${dataset.batch_size} * ${trainer.num_nodes}}}
