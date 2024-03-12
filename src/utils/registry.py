@@ -23,9 +23,11 @@ model = {
     "model": "src.models.sequence.SequenceModel",
     "lm": "src.models.sequence.long_conv_lm.ConvLMHeadModel",
     "lm_simple": "src.models.sequence.simple_lm.SimpleLMHeadModel",
+    "lm_mamba": "mamba_ssm.models.mixer_seq_simple.MambaLMHeadModel",
     "vit_b_16": "src.models.baselines.vit_all.vit_base_patch16_224",
     "dna_embedding": "src.models.sequence.dna_embedding.DNAEmbeddingModel",
-    "bpnet": "src.models.sequence.hyena_bpnet.HyenaBPNet"
+    "emb_mamba": "src.models.sequence.dna_embedding.MambaEmbeddingModel",
+    "bpnet": "src.models.sequence.hyena_bpnet.HyenaBPNet",
 }
 
 layer = {
@@ -54,9 +56,10 @@ callbacks = {
     "progressive_resizing": "src.callbacks.progressive_resizing.ProgressiveResizing",
     "seqlen_warmup": "src.callbacks.seqlen_warmup.SeqlenWarmup",
     "seqlen_warmup_reload": "src.callbacks.seqlen_warmup_reload.SeqlenWarmupReload",
-    "gpu_affinity": "src.callbacks.gpu_affinity.GpuAffinity"
+    "gpu_affinity": "src.callbacks.gpu_affinity.GpuAffinity",
+    "multifasta_seqlen_warmup": "src.callbacks.multifasta_seqlen_warmup.SeqLenWarmup",
 }
 
 model_state_hook = {
-    'load_backbone': 'src.models.sequence.long_conv_lm.load_backbone',
+    "load_backbone": "src.models.sequence.long_conv_lm.load_backbone",
 }
