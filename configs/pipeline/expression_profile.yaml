@@ -16,5 +16,5 @@ encoder: id
 
 # we need this for classification!
 decoder:
-  _name_: hap_token
+  _name_: token
   d_output: 1

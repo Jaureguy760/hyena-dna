@@ -328,28 +328,46 @@ def mae(outs, y, len_batch=None):
         return F.l1_loss(outs_masked, y_masked)
     
 ############################################################
-# Multinomial loss (derived from BPNet)
+# Multinomial loss (derived from BPNet-lite https://github.com/jmschrei/bpnet-lite)
 
-# input shape = (N, L, 1)
-def multinomial_nll(logits, y):
-    total_counts = torch.sum(y, (1, 2)) # (N,)
-    logits = torch.squeeze(logits, 2) # (N, L)
-    counts = torch.squeeze(y, 2) # (N, L)
-    ll = torch.tensor([torch.distributions.multinomial.Multinomial(int(total_counts[i]), logits=logits[i]).log_prob(counts[i]) for i in range(total_counts.shape[0])]) # (N,)
-    return torch.mean(-ll)
+# logits shape = (N, L, 1) or (N, L)
+# y shape = (N, L)
+def multinomial_nll_loss(logits, y):
+    if len(y.shape) < len(logits.shape):
+        assert logits.shape[-1] == 1
+        logits = logits.squeeze(-1)
+    assert logits.shape == y.shape
+    log_y_sum = torch.lgamma(torch.sum(y, 1) + 1)
+    log_prod_y = torch.sum(torch.lgamma(y + 1), 1)
+    log_prod_exp = torch.sum(y * logits, 1)
+    return -log_y_sum + log_prod_y - log_prod_exp
 
 # loss_total_reads = 'count' or 'poisson'
-# input shape = (N, L, 1)
-def bpnet_loss(outs, y, loss_total_reads='count'):
+# outs shape = (2N or N, L, 1) or (2N or N, L)
+# y shape = (N, L)
+def bpnet_loss(outs, y, loss_total_reads='count', out_ploidy=1, y_ploidy=1):
+    # ploidy
+    if (out_ploidy == 2) and (y_ploidy == 1): # outs = (2N, ...)
+        outs = outs.reshape(outs.shape[0]//2, 2, -1) # (N, L)
+    else:
+        assert out_ploidy == y_ploidy
+    
+    # shape
+    if len(y.shape) < len(outs.shape): # outs = (N, L, 1)
+        assert outs.shape[-1] == 1
+        outs = outs.squeeze(-1)
+    assert outs.shape == y.shape
+
+    # logits
     probs = outs / torch.sum(outs, 1, keepdims=True)
-    logits = torch.log(probs / (1-probs)) # (N, L, 1)
+    logits = torch.log(probs / (1-probs)) # (N, L)
     
     # profile loss
-    profile_loss = multinomial_nll(logits, y) # (N,)
+    profile_loss = multinomial_nll_loss(logits, y) # (N,)
     
     # total read loss
-    y = torch.log(1 + torch.sum(y, (1, 2))) # (N, L)
-    outs = torch.log(1 + torch.sum(outs, (1, 2))) # (N, L)
+    y = torch.log(1 + y) # (N, L)
+    outs = torch.log(1 + outs) # (N, L)
     if loss_total_reads == 'count':
         total_read_loss = F.mse_loss(outs, y)
     elif loss_total_reads == 'poisson':

@@ -20,6 +20,8 @@ task:
   loss:
     _name_: bpnet_loss
     loss_total_reads: count
+    out_ploidy: 2
+    y_ploidy: 1
 
 trainer:
   accelerator: gpu
