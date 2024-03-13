@@ -140,8 +140,8 @@ class HapsAndTracks(Dataset):
 
 
 class Seq2Expression(SequenceDataset):
-    _name_ = 'seq2expression'
-    
+    _name_ = "seq2expression"
+
     def __init__(
         self,
         reference: str,
@@ -155,7 +155,8 @@ class Seq2Expression(SequenceDataset):
         seed: Optional[int] = None,
     ):
         if vcf is not None:
-            self.partial_ds = partial(HapsAndTracks, 
+            self.partial_ds = partial(
+                HapsAndTracks,
                 fasta=reference,
                 vcf=vcf,
                 tracks=tracks,
@@ -166,7 +167,8 @@ class Seq2Expression(SequenceDataset):
                 seed=seed,
             )
         else:
-            self.partial_ds = partial(RefAndTracks,
+            self.partial_ds = partial(
+                RefAndTracks,
                 fasta=reference,
                 tracks=tracks,
                 length=length,
@@ -175,19 +177,20 @@ class Seq2Expression(SequenceDataset):
                 rc_prob=rc_prob,
                 seed=seed,
             )
-        self.beds = _set_fixed_length_around_center(read_bedlike(bed), length).partition_by('split', as_dict=True, include_key=False)
-    
+        self.beds = _set_fixed_length_around_center(
+            read_bedlike(bed), length
+        ).partition_by("split", as_dict=True, include_key=False)
+
     def setup(self):
-        self.train_ds = self.partial_ds(bed=self.beds['train'])
-        self.val_ds = self.partial_ds(bed=self.beds['val'])
-        self.test_ds = self.partial_ds(bed=self.beds['test'])
-    
+        self.train_ds = self.partial_ds(bed=self.beds["train"])
+        self.val_ds = self.partial_ds(bed=self.beds["val"])
+        self.test_ds = self.partial_ds(bed=self.beds["test"])
+
     def train_dataloader(self, **kwargs):
-        return DataLoader(self.train_ds, s**kwargs)
+        return DataLoader(self.train_ds, **kwargs)
 
     def val_dataloader(self, **kwargs):
         return DataLoader(self.val_ds, **kwargs)
-    
+
     def test_dataloader(self, **kwargs):
         return DataLoader(self.test_ds, **kwargs)
-        
