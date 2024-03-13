@@ -63,7 +63,6 @@ class RefAndTracks(Dataset):
             haps = sp.DNA.reverse_complement(haps, length_axis=-1, ohe_axis=-2)
             track = track[::-1]
         haps = rearrange(haps, "l a -> 1 a l")
-        track = rearrange(track, "l -> 1 l")
         return {"haps": haps.astype(np.float32).copy(), "track": track.copy()}
 
 
@@ -130,12 +129,9 @@ class HapsAndTracks(Dataset):
             haps = sp.DNA.reverse_complement(haps, length_axis=-1, ohe_axis=-2)
             track = track[..., ::-1]
         haps = rearrange(haps, "1 p l a -> p a l").astype(np.float32)
-        haps = unpack(haps, [(), ()], "* a l")
-        haps = tuple(h.copy() for h in haps)
-        data["haps"] = haps
         # tracks for each haplotype are the same because only SNPs are available (for now)
         # (1 p l) -> (1 l)
-        data["track"] = track[:, 0].copy()
+        data["track"] = track[0, 0].copy()
         return data
 
 
