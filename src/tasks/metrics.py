@@ -326,7 +326,39 @@ def mae(outs, y, len_batch=None):
         outs_masked = torch.masked_select(outs, mask)
         y_masked = torch.masked_select(y, mask)
         return F.l1_loss(outs_masked, y_masked)
+    
+############################################################
+# Multinomial loss (derived from BPNet)
 
+# input shape = (N, L, 1)
+def multinomial_nll(logits, y):
+    total_counts = torch.sum(y, (1, 2)) # (N,)
+    logits = torch.squeeze(logits, 2) # (N, L)
+    counts = torch.squeeze(y, 2) # (N, L)
+    ll = torch.tensor([torch.distributions.multinomial.Multinomial(int(total_counts[i]), logits=logits[i]).log_prob(counts[i]) for i in range(total_counts.shape[0])]) # (N,)
+    return torch.mean(-ll)
+
+# loss_total_reads = 'count' or 'poisson'
+# input shape = (N, L, 1)
+def bpnet_loss(outs, y, loss_total_reads='count'):
+    probs = outs / torch.sum(outs, 1, keepdims=True)
+    logits = torch.log(probs / (1-probs)) # (N, L, 1)
+    
+    # profile loss
+    profile_loss = multinomial_nll(logits, y) # (N,)
+    
+    # total read loss
+    y = torch.log(1 + torch.sum(y, (1, 2))) # (N, L)
+    outs = torch.log(1 + torch.sum(outs, (1, 2))) # (N, L)
+    if loss_total_reads == 'count':
+        total_read_loss = F.mse_loss(outs, y)
+    elif loss_total_reads == 'poisson':
+        total_read_loss = F.poisson_nll_loss(outs, y, log_input=False)
+    
+    return profile_loss + total_read_loss
+
+
+############################################################
 
 # Metrics that can depend on the loss
 def loss(x, y, loss_fn):
@@ -372,6 +404,7 @@ output_metric_fns = {
     "soft_cross_entropy": soft_cross_entropy,  # only for pytorch 1.10+
     "student_t": student_t_loss,
     "gaussian_ll": gaussian_ll_loss,
+    "bpnet_loss": bpnet_loss,
 }
 
 loss_metric_fns = {

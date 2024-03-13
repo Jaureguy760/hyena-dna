@@ -161,6 +161,24 @@ class TokenDecoder(Decoder):
         """
         x = self.output_transform(x)
         return x
+    
+
+class HaplotypeTokenDecoder(Decoder):
+    """Decoder for haplotypes"""
+    
+    def __init__(self, d_model, d_output=3):
+        super().__init__()
+
+        self.output_transform = nn.Linear(d_model, d_output)
+    
+    def forward(self, x, state=None):
+        """
+        x: (n_batch, l_seq, d_model)
+        Returns:(n_batch//2, l_seq, d_output)
+        """
+        x = x.reshape(-1, 2, x.shape[1], x.shape[2]).sum(dim=1) # add hap1 and hap2
+        x = self.output_transform(x)
+        return x
 
 
 class NDDecoder(Decoder):
@@ -295,6 +313,7 @@ registry = {
     "state": StateDecoder,
     "pack": PackedDecoder,
     "token": TokenDecoder,
+    "hap_token":HaplotypeTokenDecoder,
 }
 model_attrs = {
     "linear": ["d_output"],
