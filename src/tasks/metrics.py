@@ -326,7 +326,57 @@ def mae(outs, y, len_batch=None):
         outs_masked = torch.masked_select(outs, mask)
         y_masked = torch.masked_select(y, mask)
         return F.l1_loss(outs_masked, y_masked)
+    
+############################################################
+# Multinomial loss (derived from BPNet-lite https://github.com/jmschrei/bpnet-lite)
 
+# logits shape = (N, L, 1) or (N, L)
+# y shape = (N, L)
+def multinomial_nll_loss(logits, y):
+    if len(y.shape) < len(logits.shape):
+        assert logits.shape[-1] == 1
+        logits = logits.squeeze(-1)
+    assert logits.shape == y.shape
+    log_y_sum = torch.lgamma(torch.sum(y, 1) + 1)
+    log_prod_y = torch.sum(torch.lgamma(y + 1), 1)
+    log_prod_exp = torch.sum(y * logits, 1)
+    return -log_y_sum + log_prod_y - log_prod_exp
+
+# loss_total_reads = 'count' or 'poisson'
+# outs shape = (2N or N, L, 1) or (2N or N, L)
+# y shape = (N, L)
+def bpnet_loss(outs, y, loss_total_reads='count', out_ploidy=1, y_ploidy=1):
+    # ploidy
+    if (out_ploidy == 2) and (y_ploidy == 1): # outs = (2N, ...)
+        outs = outs.reshape(outs.shape[0]//2, 2, -1) # (N, L)
+    else:
+        assert out_ploidy == y_ploidy
+    
+    # shape
+    if len(y.shape) < len(outs.shape): # outs = (N, L, 1)
+        assert outs.shape[-1] == 1
+        outs = outs.squeeze(-1)
+    assert outs.shape == y.shape
+
+    # logits
+    probs = outs / torch.sum(outs, 1, keepdims=True)
+    logits = torch.log(probs / (1-probs)) # (N, L)
+    
+    # profile loss
+    profile_loss = multinomial_nll_loss(logits, y) # (N,)
+    
+    # total read loss
+    y = torch.log(1 + y) # (N, L)
+    outs = torch.log(1 + outs) # (N, L)
+    if loss_total_reads == 'count':
+        total_read_loss = F.mse_loss(outs, y)
+    elif loss_total_reads == 'poisson':
+        total_read_loss = F.poisson_nll_loss(outs, y, log_input=False)
+    
+    return profile_loss + total_read_loss
+
+
+############################################################
 
 # Metrics that can depend on the loss
 def loss(x, y, loss_fn):
@@ -372,6 +422,7 @@ output_metric_fns = {
     "soft_cross_entropy": soft_cross_entropy,  # only for pytorch 1.10+
     "student_t": student_t_loss,
     "gaussian_ll": gaussian_ll_loss,
+    "bpnet_loss": bpnet_loss,
 }
 
 loss_metric_fns = {

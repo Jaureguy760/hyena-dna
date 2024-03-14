@@ -161,7 +161,7 @@ class TokenDecoder(Decoder):
         """
         x = self.output_transform(x)
         return x
-
+    
 
 class NDDecoder(Decoder):
     """Decoder for single target (e.g. classification or regression)"""
