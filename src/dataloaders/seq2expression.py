@@ -1,14 +1,63 @@
-from typing import List, Optional, cast
+from typing import List, Optional, cast, Dict
 
+from attrs import define
 from functools import partial
 import genvarloader as gvl
 import numpy as np
+from numpy.typing import NDArray
 import seqpro as sp
-from einops import rearrange, unpack
+from einops import rearrange
 from genvarloader.util import _set_fixed_length_around_center, read_bedlike
 from torch.utils.data import Dataset, DataLoader
 
 from .base import SequenceDataset
+
+
+def _tokenize(
+    seq: NDArray,
+    tokenize_table: Dict[bytes, int],
+    add_eos: bool,
+    eos_id: int,
+    dtype=np.int32,
+):
+    length_axis = seq.ndim - 1
+    
+    if add_eos:
+        shape = seq.shape[:length_axis] + (seq.shape[length_axis] + 1,)
+        tokenized = np.empty(shape, dtype=dtype)
+        tokenized[..., -1] = eos_id
+        _tokenized = tokenized[..., :-1]
+    else:
+        tokenized = np.empty_like(seq, dtype=dtype)
+        _tokenized = tokenized
+        
+    for nuc, id in tokenize_table.items():
+        _tokenized[seq == nuc] = id
+    
+    return tokenized
+
+
+@define
+class Tokenize:
+    name: str
+    tokenize_table: Dict[bytes, int]
+    add_eos: bool
+    eos_id: int
+
+    def __call__(self, batch: Dict[str, NDArray]):
+        seq = _tokenize(
+            batch[self.name], self.tokenize_table, self.add_eos, self.eos_id
+        )
+        return seq
+
+
+NAME = "seq"
+TOKENIZE = Tokenize(
+    name=NAME,
+    tokenize_table={b"A": 7, b"C": 8, b"G": 9, b"T": 10, b"N": 11},
+    add_eos=True,
+    eos_id=1,
+)
 
 
 class RefAndTracks(Dataset):
@@ -35,6 +84,7 @@ class RefAndTracks(Dataset):
         self.max_jitter = max_jitter
         self.rc_prob = rc_prob
         self.rng = np.random.default_rng(seed)
+        self.tokenize = TOKENIZE
 
     def __len__(self):
         return self.bed.height * len(self.samples)
@@ -55,15 +105,13 @@ class RefAndTracks(Dataset):
             jitter = self.rng.integers(0, 2 * self.max_jitter + 1)
             haps = haps[jitter : jitter + self.length]
             track = track[jitter : jitter + self.length]
-        # (l a)
-        haps = sp.DNA.ohe(haps)
         # (l)
-        track = track[524:1524]
+        track = track[..., self.flank_length : track.shape[-1] - self.flank_length]
         if self.rc_prob is not None and self.rng.random() < self.rc_prob:
-            haps = sp.DNA.reverse_complement(haps, length_axis=-1, ohe_axis=-2)
+            haps = sp.DNA.reverse_complement(haps, length_axis=-1)
             track = track[::-1]
-        haps = rearrange(haps, "l a -> 1 a l")
-        return {"haps": haps.astype(np.float32).copy(), "track": track.copy()}
+        haps = self.tokenize(rearrange(haps, "l -> 1 l"))
+        return haps, track.copy()
 
 
 class HapsAndTracks(Dataset):
@@ -74,6 +122,7 @@ class HapsAndTracks(Dataset):
         tracks: str,
         bed: str,
         length: int,
+        flank_length: int = 0,
         samples: Optional[List[str]] = None,
         max_jitter: Optional[int] = None,
         rc_prob: Optional[float] = None,
@@ -93,6 +142,8 @@ class HapsAndTracks(Dataset):
         self.max_jitter = max_jitter
         self.rc_prob = rc_prob
         self.rng = np.random.default_rng(seed)
+        self.flank_length = flank_length
+        self.tokenize = TOKENIZE
 
     def __len__(self):
         return self.bed.height * len(self.samples)
@@ -121,18 +172,15 @@ class HapsAndTracks(Dataset):
                 jitter_axes=(0, 1),
                 seed=self.rng.integers(np.iinfo(np.int64).max),
             )
-        # (s p l a)
-        haps = sp.DNA.ohe(haps)
         # (s p l)
-        track = track[..., 524:1524]
+        track = track[..., self.flank_length : track.shape[-1] - self.flank_length]
         if self.rc_prob is not None and self.rng.random() < self.rc_prob:
-            haps = sp.DNA.reverse_complement(haps, length_axis=-1, ohe_axis=-2)
+            haps = sp.DNA.reverse_complement(haps, length_axis=-1)
             track = track[..., ::-1]
-        haps = rearrange(haps, "1 p l a -> p a l").astype(np.float32)
+        haps = self.tokenize(rearrange(haps, "1 p l -> p l"))
         # tracks for each haplotype are the same because only SNPs are available (for now)
         # (1 p l) -> (1 l)
-        data["track"] = track[0, 0].copy()
-        return data
+        return haps, track[0, 0].copy()
 
 
 class Seq2Expression(SequenceDataset):
