@@ -3,7 +3,10 @@
 # Also adapted from https://github.com/Lightning-AI/metrics/blob/master/src/torchmetrics/text/perplexity.py
 # But we pass in the loss to avoid recomputation
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
+import numpy as np
+from sklearn.metrics import f1_score, roc_auc_score
+from functools import partial
 
 import torch
 import torch.nn.functional as F
@@ -127,7 +130,66 @@ class NumTokens(Metric):
         return self.compute()
 
 
+def deepsea_auroc(pred_arr, y_arr, idx_start, idx_end):
+    pred_arr, y_arr = pred_arr.detach().cpu().to(torch.float32).numpy(), y_arr.detach().cpu().to(torch.float32).numpy()
+    # check size
+    num_features = pred_arr.shape[1]
+    assert num_features == 919, "Number of features should be 919"
+    assert pred_arr.shape == y_arr.shape, "Shape of prediction and label arrays should be the same"
+    # calculate AUROC
+    auroc_arr = list()
+    for i in range(idx_start, idx_end):
+        if (y_arr[:,i] == 0).all() or (y_arr[:, i] == 1).all():
+            val = np.nan
+        else:
+            val = roc_auc_score(y_arr[:,i], pred_arr[:,i])
+        auroc_arr.append(val)
+    auroc_arr = np.array(auroc_arr)
+    return np.nanmean(auroc_arr)
+
+
+class DeepSeaAUROC(Metric):
+    """Calculates the DeepSea dataset AUROC Metric"""
+    is_differentiable = False
+    higher_is_better = True
+    full_state_update = False
+    # grouped AUROC
+    group_idx_ranges = {
+        'TF': (0, 690),
+        'DHS': (690, 815),
+        'HM': (815, 919)
+    }
+
+    preds: List[Tensor]
+    target: List[Tensor]
+
+    def __init__(self, group: str, **kwargs: Dict[str, Any]):
+        kwargs["compute_on_cpu"] = kwargs.get("compute_on_cpu", True)
+        kwargs["compute_on_step"] = kwargs.get("compute_on_step", False)
+        super().__init__(**kwargs)
+        self.add_state("preds", default=[], dist_reduce_fx="cat")
+        self.add_state("target", default=[], dist_reduce_fx="cat")
+        self.group = group
+
+    def update(self, preds: Tensor, target: Tensor) -> None:
+        self.preds.append(preds)
+        self.target.append(target)
+
+    def compute(self) -> Dict[str, Tensor]:
+        return torch.tensor([
+            deepsea_auroc(
+                self.preds if isinstance(self.preds, Tensor) else torch.cat(self.preds),
+                self.target if isinstance(self.target, Tensor) else torch.cat(self.target),
+                *self.group_idx_ranges[self.group],
+            )
+        ])
+
+
+
 torchmetric_fns = {
     "perplexity": Perplexity,
     "num_tokens": NumTokens,
+    "deepsea_tf": partial(DeepSeaAUROC, "TF"),
+    "deepsea_dhs": partial(DeepSeaAUROC, "DHS"),
+    "deepsea_hm": partial(DeepSeaAUROC, "HM"),
 }

@@ -32,7 +32,7 @@ model:
     emb_dim: 5
     filter_order: 64
     short_filter_order: 3
-    l_max: 1026  # required to be set the same as the pretrained model if using, don't forget the +2!  ${eval:${dataset.max_length}+2}
+    l_max: ${eval:${dataset.max_length}+2}  # required to be set the same as the pretrained model if using, don't forget the +2!  ${eval:${dataset.max_length}+2}
     modulate: True
     w: 10
     lr: ${optimizer.lr}
