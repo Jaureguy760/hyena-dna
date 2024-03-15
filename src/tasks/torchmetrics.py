@@ -3,7 +3,7 @@
 # Also adapted from https://github.com/Lightning-AI/metrics/blob/master/src/torchmetrics/text/perplexity.py
 # But we pass in the loss to avoid recomputation
 
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, Optional, List, Tuple, Callable
 import numpy as np
 from sklearn.metrics import f1_score, roc_auc_score
 from functools import partial
@@ -12,6 +12,7 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor
 from torchmetrics import Metric
+from torchmetrics.classification import MultilabelAUROC
 
 try:
     from flash_attn.losses.cross_entropy import CrossEntropyLoss
@@ -130,66 +131,58 @@ class NumTokens(Metric):
         return self.compute()
 
 
-def deepsea_auroc(pred_arr, y_arr, idx_start, idx_end):
-    pred_arr, y_arr = pred_arr.detach().cpu().to(torch.float32).numpy(), y_arr.detach().cpu().to(torch.float32).numpy()
-    # check size
-    num_features = pred_arr.shape[1]
-    assert num_features == 919, "Number of features should be 919"
-    assert pred_arr.shape == y_arr.shape, "Shape of prediction and label arrays should be the same"
-    # calculate AUROC
-    auroc_arr = list()
-    for i in range(idx_start, idx_end):
-        if (y_arr[:,i] == 0).all() or (y_arr[:, i] == 1).all():
-            val = np.nan
-        else:
-            val = roc_auc_score(y_arr[:,i], pred_arr[:,i])
-        auroc_arr.append(val)
-    auroc_arr = np.array(auroc_arr)
-    return np.nanmean(auroc_arr)
+# grouped AUROC
+group_idx_ranges = {
+    'TF': (0, 690),
+    'DHS': (690, 815),
+    'HM': (815, 919)
+}
 
 
-class DeepSeaAUROC(Metric):
-    """Calculates the DeepSea dataset AUROC Metric"""
+class DeepSeaAUROCWrapper(Metric):
     is_differentiable = False
     higher_is_better = True
     full_state_update = False
-    # grouped AUROC
-    group_idx_ranges = {
-        'TF': (0, 690),
-        'DHS': (690, 815),
-        'HM': (815, 919)
-    }
 
-    preds: List[Tensor]
-    target: List[Tensor]
+    def __init__(self, metric: MultilabelAUROC, idx_range: Tuple[int, int]) -> None:
+        super().__init__(compute_on_cpu=True, compute_on_step=False)
+        self.metric = metric
+        self.idx_range = idx_range
 
-    def __init__(self, group: str, **kwargs: Dict[str, Any]):
-        kwargs["compute_on_cpu"] = kwargs.get("compute_on_cpu", True)
-        kwargs["compute_on_step"] = kwargs.get("compute_on_step", False)
-        super().__init__(**kwargs)
-        self.add_state("preds", default=[], dist_reduce_fx="cat")
-        self.add_state("target", default=[], dist_reduce_fx="cat")
-        self.group = group
+    def forward(self, preds: Tensor, target: Tensor) -> None:
+        self.metric.forward(*self._filter_by_range(preds, target))
 
     def update(self, preds: Tensor, target: Tensor) -> None:
-        self.preds.append(preds)
-        self.target.append(target)
+        self.metric.update(*self._filter_by_range(preds, target))
 
-    def compute(self) -> Dict[str, Tensor]:
-        return torch.tensor([
-            deepsea_auroc(
-                self.preds if isinstance(self.preds, Tensor) else torch.cat(self.preds),
-                self.target if isinstance(self.target, Tensor) else torch.cat(self.target),
-                *self.group_idx_ranges[self.group],
-            )
-        ])
+    def compute(self) -> Tensor:
+        return self.metric.compute()
 
+    def reset(self) -> None:
+        self.metric.reset()
+
+    def _filter_by_range(self, preds: Tensor, target: Tensor):
+        return preds[..., self.idx_range[0]:self.idx_range[1]], target[..., self.idx_range[0]:self.idx_range[1]]
+
+    def _wrap_update(self, update: Callable) -> Callable:
+        """Overwrite to do nothing, because the default wrapped functionality is handled by the wrapped metric."""
+        return update
+
+    def _wrap_compute(self, compute: Callable) -> Callable:
+        """Overwrite to do nothing, because the default wrapped functionality is handled by the wrapped metric."""
+        return compute
+
+
+deepsea_metrics = {
+    k: partial(DeepSeaAUROCWrapper, MultilabelAUROC(v[1]-v[0], average="macro", thresholds=1024, compute_on_cpu=True, compute_on_step=False), v)
+    for k, v in group_idx_ranges.items()
+}
 
 
 torchmetric_fns = {
     "perplexity": Perplexity,
     "num_tokens": NumTokens,
-    "deepsea_tf": partial(DeepSeaAUROC, "TF"),
-    "deepsea_dhs": partial(DeepSeaAUROC, "DHS"),
-    "deepsea_hm": partial(DeepSeaAUROC, "HM"),
+    "deepsea_tf": deepsea_metrics['TF'],
+    "deepsea_dhs": deepsea_metrics['DHS'],
+    "deepsea_hm": deepsea_metrics['HM'],
 }
