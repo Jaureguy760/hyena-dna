@@ -1,10 +1,8 @@
 from pathlib import Path
 from pyfaidx import Fasta
-import polars as pl
 import pandas as pd
 import torch
 from random import randrange, random
-import numpy as np
 
 
 """
@@ -136,7 +134,6 @@ class FastaInterval:
 
 
 class HG38Dataset(torch.utils.data.Dataset):
-
     """
     Loop thru bed file, retrieve (chr, start, end), query fasta file for sequence.
 

@@ -1,4 +1,4 @@
-""" Compute a Krylov function efficiently. (S4 renames the Krylov function to a "state space kernel")
+"""Compute a Krylov function efficiently. (S4 renames the Krylov function to a "state space kernel")
 
 A : (N, N)
 b : (N,)
@@ -8,7 +8,7 @@ Return: [c^T A^i b for i in [L]]
 
 import torch
 import torch.nn.functional as F
-from einops import rearrange, repeat
+from einops import rearrange
 
 from src.ops.toeplitz import causal_convolution
 

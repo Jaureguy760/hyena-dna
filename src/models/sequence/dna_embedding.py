@@ -42,7 +42,7 @@ class DNAEmbeddingModel(nn.Module, GenerationMixin):
         device=None,
         dtype=None,
         return_hidden_state=False,
-        **kwargs
+        **kwargs,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
@@ -73,7 +73,7 @@ class DNAEmbeddingModel(nn.Module, GenerationMixin):
             residual_in_fp32=residual_in_fp32,
             sequence_parallel=sequence_parallel,
             **factory_kwargs,
-            **kwargs
+            **kwargs,
         )
         if process_group is None:
             self.lm_head = nn.Linear(d_model, vocab_size, bias=False, **factory_kwargs)
@@ -86,14 +86,14 @@ class DNAEmbeddingModel(nn.Module, GenerationMixin):
                 process_group,
                 bias=False,
                 sequence_parallel=sequence_parallel,
-                **factory_kwargs
+                **factory_kwargs,
             )
         # Initialize weights and apply final processing
         self.apply(
             partial(
                 _init_weights,
                 n_layer=n_layer,
-                **(initializer_cfg if initializer_cfg is not None else {})
+                **(initializer_cfg if initializer_cfg is not None else {}),
             )
         )
         self.tie_weights()

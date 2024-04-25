@@ -31,7 +31,7 @@ class SeqLenWarmup(lit.Callback):
         og_limit_test_batches = trainer.limit_test_batches
         trainer.limit_val_batches = 0
         trainer.limit_test_batches = 0
-        
+
         if self.og_beds is None and self.max_tokens_per_batch is None:
             self.og_beds = dm.beds
             self.max_tokens_per_batch = int(dm.batch_size * self.lengths[-1])
@@ -50,7 +50,9 @@ class SeqLenWarmup(lit.Callback):
         else:
             pl_module.log("seqlen_warmup_finished", False)
             dm.beds = {
-                split: self._with_length(bed, current_length, self.tokens_per_step, stage=split)
+                split: self._with_length(
+                    bed, current_length, self.tokens_per_step, stage=split
+                )
                 for split, bed in self.og_beds.items()
             }
             self.step += 1

@@ -6,7 +6,6 @@
 from typing import Any, Dict, Optional
 
 import torch
-import torch.nn.functional as F
 from torch import Tensor
 from torchmetrics import Metric
 
@@ -37,6 +36,7 @@ class Perplexity(Metric):
         >>> metric(preds, target)
         tensor(5.2545)
     """
+
     is_differentiable = True
     higher_is_better = False
     full_state_update = False
@@ -56,7 +56,9 @@ class Perplexity(Metric):
 
         self.loss_fn = CrossEntropyLoss()
 
-    def update(self, preds: Tensor, target: Tensor, loss: Optional[Tensor] = None) -> None:  # type: ignore
+    def update(
+        self, preds: Tensor, target: Tensor, loss: Optional[Tensor] = None
+    ) -> None:  # type: ignore
         """Compute and store intermediate statistics for Perplexity.
         Args:
             preds:
@@ -106,7 +108,9 @@ class NumTokens(Metric):
         else:
             self.tensor_parallel_world_size = 1
 
-    def update(self, preds: Tensor, target: Tensor, loss: Optional[Tensor] = None) -> None:  # type: ignore
+    def update(
+        self, preds: Tensor, target: Tensor, loss: Optional[Tensor] = None
+    ) -> None:  # type: ignore
         self.count += target.numel() // self.tensor_parallel_world_size
 
     def compute(self) -> Tensor:

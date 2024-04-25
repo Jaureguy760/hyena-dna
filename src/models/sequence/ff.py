@@ -1,4 +1,4 @@
-""" Implementation of FFN block in the style of Transformers """
+"""Implementation of FFN block in the style of Transformers"""
 
 from functools import partial
 from torch import nn

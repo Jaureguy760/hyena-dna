@@ -6,7 +6,6 @@ import shutil
 import gzip
 import random
 from typing import Optional, Union, Dict, List
-from src.dataloaders.datasets.hg38_char_tokenizer import CharacterTokenizer
 import collections
 
 """
@@ -356,7 +355,6 @@ SPECIES_CHROMOSOME_SPLITS = {
 
 
 class SpeciesDataset(torch.utils.data.Dataset):
-
     """
     Loop thru fasta files (separated by chromosome) and return a sequence of length `max_length` from a random chromosome.
     """
@@ -423,9 +421,7 @@ class SpeciesDataset(torch.utils.data.Dataset):
         ] = {}  # [key] = species, [value] = list of chromosomes in this split
         self.chromosome_weights: Dict[
             str, List[float]
-        ] = (
-            {}
-        )  # [key] = species, [value] = list where [idx] = self.chromosomes[species][idx], [value] = weight
+        ] = {}  # [key] = species, [value] = list where [idx] = self.chromosomes[species][idx], [value] = weight
         self.species_weights: List[
             float
         ] = []  # [idx] = self.species[idx], [value] = weight
@@ -433,9 +429,7 @@ class SpeciesDataset(torch.utils.data.Dataset):
         # For every species in `self.species`, load all chromosomes belonging to `split`
         for spec in self.species:
             species_path = Path(self.species_dir) / spec
-            assert (
-                species_path.exists()
-            ), f"The path `{species_path}` does not exist for species `{spec}`. Please point to a valid directory containing your species fna.gz files."
+            assert species_path.exists(), f"The path `{species_path}` does not exist for species `{spec}`. Please point to a valid directory containing your species fna.gz files."
 
             # Select chromosomes for this split
             assert (
@@ -486,8 +480,8 @@ class SpeciesDataset(torch.utils.data.Dataset):
 
         # Set chromosome weights for sampling
         if isinstance(chromosome_weights, dict):
-            assert len(chromosome_weights) == len(
-                self.species
+            assert (
+                len(chromosome_weights) == len(self.species)
             ), f"`chromosome_weights` must have a weight for each species. Expected {len(self.species)} weights, instead got {len(chromosome_weights)}."
             self.chromosome_weights = chromosome_weights
         elif chromosome_weights == "uniform":
@@ -520,8 +514,8 @@ class SpeciesDataset(torch.utils.data.Dataset):
                     )
             elif isinstance(strategy_or_weights, list):
                 # Check that all chromosomes are accounted for
-                assert set(strategy_or_weights.keys()) == set(
-                    self.chromosomes[spec]
+                assert (
+                    set(strategy_or_weights.keys()) == set(self.chromosomes[spec])
                 ), f"`chromosome_weights` must have a weight for each chromosome. Expected {self.chromosomes[spec]}, instead got {strategy_or_weights.keys()}."
                 self.chromosome_weights[spec] = strategy_or_weights
             else:
@@ -531,8 +525,8 @@ class SpeciesDataset(torch.utils.data.Dataset):
 
         # Set species weights for sampling
         if isinstance(species_weights, list):
-            assert len(species_weights) == len(
-                self.species
+            assert (
+                len(species_weights) == len(self.species)
             ), f"`species_weights` must have a weight for each species. Expected {len(self.species)} weights, instead got {len(species_weights)}."
             self.species_weights = species_weights
         elif species_weights == "uniform":
@@ -618,7 +612,7 @@ class SpeciesDataset(torch.utils.data.Dataset):
                 f"Sampled sequence ({start}, {end}) of len={len(seq)}: {seq[:10]}...{seq[-10:]}"
             )
 
-        assert self.tokenizer is not None, f"Tokenizer cannot be `None`."
+        assert self.tokenizer is not None, "Tokenizer cannot be `None`."
         if self.tokenizer_name == "char":
             seq = self.tokenizer(
                 seq, add_special_tokens=False

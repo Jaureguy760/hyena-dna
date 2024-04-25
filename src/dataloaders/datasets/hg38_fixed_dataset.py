@@ -15,7 +15,6 @@ def exists(val):
 
 
 class HG38FixedDataset(torch.utils.data.Dataset):
-
     """
     Loop thru bed file, retrieve (chr, start, end), query fasta file for sequence.
     Returns a generator that retrieves the sequence.

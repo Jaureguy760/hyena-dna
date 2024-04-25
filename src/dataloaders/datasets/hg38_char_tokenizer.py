@@ -1,9 +1,10 @@
-""" 
+"""
 From: https://github.com/dariush-bahrami/character-tokenizer/blob/master/charactertokenizer/core.py
 
 CharacterTokenzier for Hugging Face Transformers.
 This is heavily inspired from CanineTokenizer in transformers package.
 """
+
 import json
 import os
 from pathlib import Path
@@ -18,7 +19,7 @@ class CharacterTokenizer(PreTrainedTokenizer):
         characters: Sequence[str],
         model_max_length: int,
         padding_side: str = "left",
-        **kwargs
+        **kwargs,
     ):
         """Character tokenizer for Hugging Face transformers.
         Args:

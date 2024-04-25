@@ -526,7 +526,7 @@ class LMBackbone(nn.Module):
         residual_in_fp32=False,
         device=None,
         dtype=None,
-        **kwargs
+        **kwargs,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
@@ -602,7 +602,7 @@ class SimpleLMHeadModel(nn.Module):
         pad_vocab_size_multiple: int = 1,
         device=None,
         dtype=None,
-        **kwargs
+        **kwargs,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()

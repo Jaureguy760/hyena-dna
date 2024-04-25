@@ -1,5 +1,6 @@
-""" Utilities for dealing with collection objects (lists, dicts) and configs """
-from typing import Sequence, Mapping, Optional, Callable
+"""Utilities for dealing with collection objects (lists, dicts) and configs"""
+
+from typing import Sequence, Mapping, Callable
 import functools
 import hydra
 from omegaconf import ListConfig, DictConfig

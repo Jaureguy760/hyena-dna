@@ -1,11 +1,9 @@
-""" Utils for the training loop. Copied from https://github.com/HazyResearch/transformers/blob/master/src/utils/utils.py """
+"""Utils for the training loop. Copied from https://github.com/HazyResearch/transformers/blob/master/src/utils/utils.py"""
+
 import logging
-import os
 import warnings
-from typing import List, Sequence
 
 import torch.nn as nn
-import pytorch_lightning as pl
 import rich.syntax
 import rich.tree
 from omegaconf import DictConfig, OmegaConf

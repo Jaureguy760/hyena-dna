@@ -1,4 +1,4 @@
-""" Implements a full residual block around a black box layer
+"""Implements a full residual block around a black box layer
 
 Configurable options include:
 normalization position: prenorm or postnorm

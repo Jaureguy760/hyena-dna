@@ -1,21 +1,19 @@
 """pykeops implementations of the Vandermonde matrix multiplication kernel used in the S4D kernel."""
-import math
+
 import torch
 
-from einops import rearrange, repeat
+from einops import rearrange
 from opt_einsum import contract
 
-import os
 
 try:
-    import pykeops
     from pykeops.torch import LazyTensor, Genred
-except:
+except ImportError:
     pass
 
 try:
     from cauchy_mult import vand_log_mult_sym_fwd, vand_log_mult_sym_bwd
-except:
+except ImportError:
     vand_log_mult_sym_fwd, vand_log_mult_sym_bwd = None, None
 
 _conj = lambda x: torch.cat([x, x.conj()], dim=-1)
@@ -42,7 +40,7 @@ def vandermonde_naive(v, x, L, conj=True):
     """
     v: (..., N)
     x: (..., N)
-    returns: (..., L) \sum v x^l
+    returns: (..., L) \\sum v x^l
     """
     if conj:
         x = _conj(x)
@@ -58,7 +56,7 @@ def log_vandermonde_naive(v, x, L, conj=True):
     """
     v: (..., N)
     x: (..., N)
-    returns: (..., L) \sum v x^l
+    returns: (..., L) \\sum v x^l
     """
     vandermonde_matrix = torch.exp(x.unsqueeze(-1) * torch.arange(L).to(x))  # (... N L)
     vandermonde_prod = contract(
@@ -168,13 +166,13 @@ class LogVandMultiplySymmetric(torch.autograd.Function):
     def forward(ctx, v, x, L):
         batch, N = v.shape
         supported_N_values = [1 << log_n for log_n in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]
-        if not N in supported_N_values:
+        if N not in supported_N_values:
             raise NotImplementedError(f"Only support N values in {supported_N_values}")
         max_L_value = 32 * 1024 * 64 * 1024
         if L > max_L_value:
             raise NotImplementedError(f"Only support L values <= {max_L_value}")
         if not v.is_cuda and x.is_cuda:
-            raise NotImplementedError(f"Only support CUDA tensors")
+            raise NotImplementedError("Only support CUDA tensors")
         ctx.save_for_backward(v, x)
         return vand_log_mult_sym_fwd(v, x, L)
 

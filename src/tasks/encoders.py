@@ -1,6 +1,4 @@
-import datetime
 import math
-from typing import ForwardRef
 
 import torch
 from torch import nn
@@ -9,9 +7,7 @@ from einops import rearrange, repeat
 
 import src.models.nn.utils as U
 import src.utils as utils
-import src.utils.config
 from src.models.sequence.block import SequenceResidualBlock
-from src.models.nn.components import Normalization
 
 
 class Encoder(nn.Module):
@@ -268,7 +264,6 @@ class OneHotEncoder(Encoder):
 
 
 class Conv2DPatchEncoder(Encoder):
-
     """
     For encoding images into a sequence of patches.
     """

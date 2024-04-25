@@ -211,7 +211,7 @@ class MultiFasta(SequenceDataset):
             files = Path(files)
             separator = "," if files.suffix == ".csv" else "\t"
             files = pl.read_csv(files, separator=separator)
-            
+
         if bed is not None:
             if isinstance(bed, (str, Path)):
                 bed = pl.read_ipc(bed)
@@ -224,7 +224,11 @@ class MultiFasta(SequenceDataset):
                     self.batch_size,
                     self.max_memory_gb,
                 )
-                for (fasta, _), bed in tqdm(zip(files.iter_rows(), beds), total=files.height, desc="Initializing fastas")
+                for (fasta, _), bed in tqdm(
+                    zip(files.iter_rows(), beds),
+                    total=files.height,
+                    desc="Initializing fastas",
+                )
             ]
         else:
             self.fastas = [
@@ -235,7 +239,9 @@ class MultiFasta(SequenceDataset):
                     self.batch_size,
                     self.max_memory_gb,
                 )
-                for fasta, bed in tqdm(files.iter_rows(), total=files.height, desc="Initializing fastas")
+                for fasta, bed in tqdm(
+                    files.iter_rows(), total=files.height, desc="Initializing fastas"
+                )
             ]
 
         self.warmup_fastas: List[Fasta] = []

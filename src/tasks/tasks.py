@@ -1,18 +1,6 @@
-from typing import Optional, List, Tuple
-import math
-import functools
-import collections
-import torch
+from typing import List
 import torch.nn as nn
-import torch.nn.functional as F
 from einops import rearrange
-from omegaconf import ListConfig
-from src.models.nn.components import (
-    ReversibleInstanceNorm1dInput,
-    ReversibleInstanceNorm1dOutput,
-    TSNormalization,
-    TSInverseNormalization,
-)
 
 from src.models.nn.adaptive_softmax import (
     AdaptiveEmbedding,
@@ -273,9 +261,9 @@ class MultiClass(BaseTask):
             if name in M.output_metric_fns:
                 if name.endswith("_per_class"):
                     for spec_idx, spec in enumerate(self.dataset.species):
-                        self.continual_metrics[
-                            name + "_" + spec
-                        ] = self.continual_metrics[name + "_" + spec].to(x.device)
+                        self.continual_metrics[name + "_" + spec] = (
+                            self.continual_metrics[name + "_" + spec].to(x.device)
+                        )
                         self.continual_metrics[name + "_" + spec].update(x, y)
                         output_metrics[name + "_" + spec] = self.continual_metrics[
                             name + "_" + spec

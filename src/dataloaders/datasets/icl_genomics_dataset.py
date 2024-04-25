@@ -1,9 +1,8 @@
 import torch
-from random import random, randint
+from random import random
 import numpy as np
 from pathlib import Path
 
-from src.dataloaders.datasets.hg38_char_tokenizer import CharacterTokenizer
 from genomic_benchmarks.loc2seq import download_dataset
 from genomic_benchmarks.data_check import is_downloaded
 
@@ -52,7 +51,6 @@ def string_reverse_complement(seq):
 
 
 class ICLGenomicsDataset(torch.utils.data.Dataset):
-
     """
     Loop thru bed file, retrieve (chr, start, end), query fasta file for sequence.
     Returns a generator that retrieves the sequence.

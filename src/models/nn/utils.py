@@ -1,8 +1,7 @@
-""" Utility wrappers around modules to let them handle Args and extra arguments """
+"""Utility wrappers around modules to let them handle Args and extra arguments"""
 
 import inspect
 from functools import wraps
-import torch
 from torch import nn
 
 

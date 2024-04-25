@@ -37,16 +37,14 @@ class _Transform:
     add_eos: bool
     eos_id: int
     last_batch: Optional[Dict[Hashable, NDArray]] = None
-    
+
     def __call__(self, batch: Dict[Hashable, NDArray]):
         original_seq = batch[self.name]
         nuc_dist = sp.nucleotide_content(original_seq, length_axis=-1, alphabet=sp.DNA)
-        seq = _tokenize(
-            original_seq, self.tokenize_table, self.add_eos, self.eos_id
-        )
+        seq = _tokenize(original_seq, self.tokenize_table, self.add_eos, self.eos_id)
         batch = {
             self.name: seq[..., :-1],
-            'target': seq[..., 1:].astype(np.int64),
+            "target": seq[..., 1:].astype(np.int64),
         }
         if self.last_batch is not None:
             try:
@@ -56,18 +54,19 @@ class _Transform:
             else:
                 print(np.unique(original_seq))
                 print(nuc_dist)
-                raise RuntimeError('Caught identical batches.')
+                raise RuntimeError("Caught identical batches.")
         self.last_batch = batch
         return batch
 
-if __name__ == '__main__':
-    name='seq'
-    fasta = '/cellar/users/dlaub/projects/HyenaDNA_collab/data/human/hg38.ml.fa'
-    bed_file = '/cellar/users/dlaub/projects/HyenaDNA_collab/data/human/sequences.bed'
-    fixed_length=1024
-    batch_size=256
+
+if __name__ == "__main__":
+    name = "seq"
+    fasta = "/cellar/users/dlaub/projects/HyenaDNA_collab/data/human/hg38.ml.fa"
+    bed_file = "/cellar/users/dlaub/projects/HyenaDNA_collab/data/human/sequences.bed"
+    fixed_length = 1024
+    batch_size = 256
     max_memory_gb = 64
-    
+
     # bed = read_bedlike(bed_file).rename({'name': 'split'})
     # bed = bed.filter(pl.col('split') == 'train')
     # bed = _set_fixed_length_around_center(bed, fixed_length)
@@ -75,14 +74,14 @@ if __name__ == '__main__':
     # fasta_reader = gvl.Fasta(name, fasta, 'N', 'dna', in_memory=True)
     # print(chrom, start, end)
     # print(fasta_reader.read(chrom, np.array([start]), np.array([end])))
-    
+
     # transform = _Transform(
     #     name=name,
     #     tokenize_table={b"A": 7, b"C": 8, b"G": 9, b"T": 10, b"N": 11},
     #     add_eos=True,
     #     eos_id=1,
     # )
-    
+
     # gvloader = gvl.GVL(
     #     fasta_reader,
     #     bed=bed,
@@ -93,7 +92,7 @@ if __name__ == '__main__':
     #     return_tuples=['seq', 'target']
     # )
     # dl = gvloader.torch_dataloader()
-    
+
     dm = GVL_HG38(
         fasta=fasta,
         bed=bed_file,
@@ -103,6 +102,6 @@ if __name__ == '__main__':
     )
     dm.setup()
     dl = dm.train_dataloader()
-    
+
     for batch in tqdm(dl):
         continue

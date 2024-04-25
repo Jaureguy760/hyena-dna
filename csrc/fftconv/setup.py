@@ -1,11 +1,13 @@
 # Adapted from https://github.com/NVIDIA/apex/blob/master/setup.py
 import torch
-from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtension, CUDA_HOME
-from setuptools import setup, find_packages
+from torch.utils.cpp_extension import (
+    BuildExtension,
+    CUDAExtension,
+    CUDA_HOME,
+)
+from setuptools import setup
 import subprocess
 
-import sys
-import warnings
 import os
 
 # ninja build does not work unless include_dirs are abs path
@@ -13,7 +15,9 @@ this_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 def get_cuda_bare_metal_version(cuda_dir):
-    raw_output = subprocess.check_output([cuda_dir + "/bin/nvcc", "-V"], universal_newlines=True)
+    raw_output = subprocess.check_output(
+        [cuda_dir + "/bin/nvcc", "-V"], universal_newlines=True
+    )
     output = raw_output.split()
     release_idx = output.index("release") + 1
     release = output[release_idx].split(".")
@@ -24,14 +28,18 @@ def get_cuda_bare_metal_version(cuda_dir):
 
 
 def check_cuda_torch_binary_vs_bare_metal(cuda_dir):
-    raw_output, bare_metal_major, bare_metal_minor = get_cuda_bare_metal_version(cuda_dir)
+    raw_output, bare_metal_major, bare_metal_minor = get_cuda_bare_metal_version(
+        cuda_dir
+    )
     torch_binary_major = torch.version.cuda.split(".")[0]
     torch_binary_minor = torch.version.cuda.split(".")[1]
 
     print("\nCompiling cuda extensions with")
     print(raw_output + "from " + cuda_dir + "/bin\n")
 
-    if (bare_metal_major != torch_binary_major) or (bare_metal_minor != torch_binary_minor):
+    if (bare_metal_major != torch_binary_major) or (
+        bare_metal_minor != torch_binary_minor
+    ):
         raise RuntimeError(
             "Cuda extensions are being compiled with a version of Cuda that does "
             "not match the version used to compile Pytorch binaries.  "
@@ -98,20 +106,30 @@ cc_flag.append("arch=compute_80,code=sm_80")
 
 ext_modules.append(
     CUDAExtension(
-        'fftconv', [
-            'fftconv.cpp',
-            'fftconv_cuda.cu',
+        "fftconv",
+        [
+            "fftconv.cpp",
+            "fftconv_cuda.cu",
         ],
-        extra_compile_args={'cxx': ['-g', '-march=native', '-funroll-loops'],
-                            'nvcc': ['-O3', '--threads', '4', '-lineinfo', '--use_fast_math', '-std=c++17', '-arch=compute_70']
-        # extra_compile_args={'cxx': ['-O3'],
-        #                     'nvcc': append_nvcc_threads(['-O3', '-lineinfo', '--use_fast_math', '-std=c++17'] + cc_flag)
-                            },
-        include_dirs=[os.path.join(this_dir, 'mathdx/22.02/include')]
+        extra_compile_args={
+            "cxx": ["-g", "-march=native", "-funroll-loops"],
+            "nvcc": [
+                "-O3",
+                "--threads",
+                "4",
+                "-lineinfo",
+                "--use_fast_math",
+                "-std=c++17",
+                "-arch=compute_70",
+            ],
+            # extra_compile_args={'cxx': ['-O3'],
+            #                     'nvcc': append_nvcc_threads(['-O3', '-lineinfo', '--use_fast_math', '-std=c++17'] + cc_flag)
+        },
+        include_dirs=[os.path.join(this_dir, "mathdx/22.02/include")],
     )
 )
 
-torch.utils.cpp_extension.COMMON_NVCC_FLAGS.remove('-D__CUDA_NO_HALF2_OPERATORS__')
+torch.utils.cpp_extension.COMMON_NVCC_FLAGS.remove("-D__CUDA_NO_HALF2_OPERATORS__")
 
 setup(
     name="fftconv",

@@ -1,11 +1,10 @@
-""" Wrapper around nn.MultiheadAttention to adhere to SequenceModule interface. """
+"""Wrapper around nn.MultiheadAttention to adhere to SequenceModule interface."""
 
 import torch
 import torch.nn.functional as F
 from torch import nn
 import hydra
 from src.models.sequence.base import SequenceModule, TransposedModule
-import src.models.nn.utils as U
 from einops import rearrange
 
 

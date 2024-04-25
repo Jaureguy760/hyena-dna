@@ -48,7 +48,7 @@ class FastaInterval:
         # max_length = None,
         return_seq_indices=False,
         shift_augs=None,
-        rc_aug=False
+        rc_aug=False,
     ):
         fasta_file = Path(fasta_file)
         assert fasta_file.exists(), "path to fasta file must exist"
@@ -200,9 +200,7 @@ class ChromatinProfileDataset(torch.utils.data.Dataset):
             coords_target_path,
             usecols=["Chr_No", "Start", "End"],
             dtype={"Chr_No": np.int64, "Start": np.int64, "End": np.int64},
-        ).reset_index(
-            drop=True
-        )  # Note Chr_No is zero-based
+        ).reset_index(drop=True)  # Note Chr_No is zero-based
 
         # Quickly grab target column names
         with open(coords_target_path, "r") as f:

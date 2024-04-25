@@ -1,17 +1,13 @@
-""" Datasets for core experimental results """
+"""Datasets for core experimental results"""
 
 import os
-import pickle
 from functools import partial
 from pathlib import Path
 
-import numpy as np
 import torch
 import torchvision
 from einops import rearrange
-from einops.layers.torch import Rearrange
-from src.utils import is_list, permutations
-from torch.nn import functional as F
+from src.utils import is_list
 
 
 def deprecated(cls_or_func):

@@ -653,13 +653,13 @@ def create_trainer(config, **kwargs):
             grad_accum_factor = (
                 config.train.global_batch_size // batch_size
             )  # grad accum factor for this stage
-            accumulate_grad_schedule[
-                epochs_cume
-            ] = grad_accum_factor  # set the grad accum factor for this stage
+            accumulate_grad_schedule[epochs_cume] = (
+                grad_accum_factor  # set the grad accum factor for this stage
+            )
             epochs_cume += stage["epochs"]  # increment epochs_cume for next stage
-        trainer_config_dict[
-            "accumulate_grad_batches"
-        ] = accumulate_grad_schedule  # set the accumulate_grad_batches schedule
+        trainer_config_dict["accumulate_grad_batches"] = (
+            accumulate_grad_schedule  # set the accumulate_grad_batches schedule
+        )
         trainer_config_dict.pop("_target_")  # only hydra uses this to instantiate
         # Set DDPStrategy to work with pl.Trainer
         config.trainer.pop("strategy")

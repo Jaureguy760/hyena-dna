@@ -1,15 +1,12 @@
 import math
-import sys
 import os
 from traceback import print_exc
 
-from re import U
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from functools import partial
 
-from einops import rearrange, repeat
+from einops import rearrange
 
 try:
     from src.ops.fftconv import fftconv_ref, fftconv_func, fftconv_heads_ref
@@ -196,7 +193,7 @@ class HyenaFilter(OptimModule):
             self.use_bias = True
         else:
             self.use_bias = False
-        #self.use_bias = bias
+        # self.use_bias = bias
         self.fused_fft_conv = fused_fft_conv
         if self.use_bias:
             self.bias = nn.Parameter(torch.randn(self.d_model))
@@ -258,7 +255,9 @@ class HyenaFilter(OptimModule):
 
         if hasattr(self, "flashfftconv"):
             x = x.contiguous()
-            y = self.flashfftconv(x, k.transpose(-1, -2).squeeze(0).contiguous()).to(dtype=x.dtype)
+            y = self.flashfftconv(x, k.transpose(-1, -2).squeeze(0).contiguous()).to(
+                dtype=x.dtype
+            )
             return y
         elif self.fused_fft_conv:
             bias = bias.to(dtype=torch.float32)
@@ -368,7 +367,9 @@ class HyenaOperator(nn.Module):
             raise ImportError("fused_dense is not installed")
         linear_cls = nn.Linear if not fused_bias_fc else FusedDense
         self.out_proj = linear_cls(self.d_model * inner_factor, self.d_model)
-        self.in_proj = linear_cls(self.d_model, (self.order + 1) * self.d_model, bias=False)
+        self.in_proj = linear_cls(
+            self.d_model, (self.order + 1) * self.d_model, bias=False
+        )
         if self.post_order_ffn:
             self.ord_proj_w = nn.Parameter(
                 torch.randn(self.order, self.num_heads, self.num_heads)
@@ -389,9 +390,8 @@ class HyenaOperator(nn.Module):
         )
 
         try:
-            from flashfftconv import FlashDepthWiseConv1d
             # TODO: FlashDepthWiseConv1d appears to violate causality.
-            '''
+            """
             self.short_filter = FlashDepthWiseConv1d(
                 total_width,
                 self.short_filter_order,
@@ -400,7 +400,7 @@ class HyenaOperator(nn.Module):
                 bias=self.short_filter.bias,
                 dtype=torch.float16,
             )
-            '''
+            """
         except Exception:
             print_exc()
 

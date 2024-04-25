@@ -2,7 +2,7 @@ r"""
 Sequence Length Warmup by Reloading
 ====================
 Change sequence lengths according to a stage schedule. The stage parameters sets the sequence length
-and batch size. 
+and batch size.
 
 
 TODO (not yet supported):

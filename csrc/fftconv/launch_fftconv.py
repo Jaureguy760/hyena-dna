@@ -11,14 +11,13 @@ def fftconv_ref(u, k, D, dropout_mask):
     fft_size = 2 * seqlen
     k_f = torch.fft.rfft(k, n=fft_size) / fft_size
     u_f = torch.fft.rfft(u.to(dtype=k.dtype), n=fft_size)
-    y = torch.fft.irfft(u_f * k_f, n=fft_size, norm='forward')[..., :seqlen]
+    y = torch.fft.irfft(u_f * k_f, n=fft_size, norm="forward")[..., :seqlen]
     out = y + u * D.unsqueeze(-1)
-    return (F.gelu(out) * rearrange(dropout_mask, 'b H -> b H 1')).to(dtype=u.dtype)
+    return (F.gelu(out) * rearrange(dropout_mask, "b H -> b H 1")).to(dtype=u.dtype)
 
 
 def fftconv_fast(u, k, D, dropout_mask):
-    """Fuse padding + rfft + pointwise mult + ifft + multiply with D + gelu + dropout
-    """
+    """Fuse padding + rfft + pointwise mult + ifft + multiply with D + gelu + dropout"""
     seqlen = u.shape[-1]
     fft_size = 2 * seqlen
     k_f = torch.fft.rfft(k, n=fft_size)
@@ -31,11 +30,11 @@ def fftconv_fast_bwd(dout, u, k, D, dropout_mask=None):
     fft_size = 2 * seqlen
     k_f = torch.fft.rfft(k, n=fft_size)
     dx, dk_f, dD = fftconv_bwd(dout, u, k_f, D, dropout_mask, fft_size)
-    dk = torch.fft.irfft(dk_f, n=fft_size, norm='forward')[..., :seqlen]
+    dk = torch.fft.irfft(dk_f, n=fft_size, norm="forward")[..., :seqlen]
     return dx, dk, dD
 
 
-device = 'cuda'
+device = "cuda"
 dtype = torch.float32
 # dtype = torch.float16
 batch_size = 64

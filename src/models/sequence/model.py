@@ -1,4 +1,4 @@
-""" Isotropic deep sequence model backbone, in the style of ResNets / Transformers.
+"""Isotropic deep sequence model backbone, in the style of ResNets / Transformers.
 
 The SequenceModel class implements a generic (batch, length, d_input) -> (batch, length, d_output) transformation
 """

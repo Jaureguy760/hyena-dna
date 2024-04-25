@@ -1,4 +1,4 @@
-""" Defines flexible gating mechanisms based on ideas from LSSL paper and UR-LSTM paper https://arxiv.org/abs/1910.09890 """
+"""Defines flexible gating mechanisms based on ideas from LSSL paper and UR-LSTM paper https://arxiv.org/abs/1910.09890"""
 
 import torch
 import torch.nn as nn

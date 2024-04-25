@@ -113,17 +113,17 @@ class MultiFasta(SequenceDataset):
 
         if isinstance(bed, str):
             bed = pl.read_ipc(bed)
-        
+
         if hg38:
             fastas = fastas.filter(fastas.str.contains("Homo_sapiens"))
-            bed = bed.filter(pl.col('species') == 'Homo_sapiens')
+            bed = bed.filter(pl.col("species") == "Homo_sapiens")
 
         if fasta_dir is not None:
             file_names = fastas.str.split("/").list.get(-1)
-            fastas = fasta_dir.rstrip('/') + '/' + file_names
+            fastas = fasta_dir.rstrip("/") + "/" + file_names
         else:
             fastas = fastas.str.replace(r"/iblm/netapp", r"/home/jovyan", literal=True)
-        
+
         if limit_fastas is not None:
             fastas = fastas.head(limit_fastas)
 
@@ -153,7 +153,9 @@ class MultiFasta(SequenceDataset):
         self.test_ds = TorchMultiFasta(self.fastas, self.beds["test"])
 
     def train_dataloader(self, **kwargs):
-        return DataLoader(self.train_ds, shuffle=True, batch_size=self.batch_size, **self.dl_kwargs)
+        return DataLoader(
+            self.train_ds, shuffle=True, batch_size=self.batch_size, **self.dl_kwargs
+        )
 
     def val_dataloader(self, **kwargs):
         return DataLoader(self.val_ds, self.batch_size, **self.dl_kwargs)

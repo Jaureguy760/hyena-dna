@@ -1,15 +1,10 @@
-from itertools import islice
-from functools import partial
-import os
-import functools
-
 # import json
 # from pathlib import Path
 # from pyfaidx import Fasta
 # import polars as pl
 # import pandas as pd
 import torch
-from random import randrange, random
+from random import random
 import numpy as np
 from pathlib import Path
 
@@ -17,7 +12,6 @@ from pathlib import Path
 from src.dataloaders.datasets.hg38_char_tokenizer import CharacterTokenizer
 from genomic_benchmarks.loc2seq import download_dataset
 from genomic_benchmarks.data_check import is_downloaded
-from src.dataloaders.base import default_data_path
 
 """
 
@@ -142,7 +136,6 @@ def one_hot_reverse_complement(one_hot):
 
 
 class GenomicBenchmarkDataset(torch.utils.data.Dataset):
-
     """
     Loop thru bed file, retrieve (chr, start, end), query fasta file for sequence.
     Returns a generator that retrieves the sequence.

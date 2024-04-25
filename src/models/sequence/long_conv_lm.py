@@ -1,19 +1,15 @@
 import copy
 import math
 import re
-import os
-from traceback import print_exc
 from functools import partial
 
-from collections import namedtuple, OrderedDict
-from collections.abc import Sequence
+from collections import namedtuple
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
 
-from transformers.models.gpt2.configuration_gpt2 import GPT2Config
 
 from einops import rearrange
 
@@ -37,8 +33,9 @@ except ImportError:
 from src.utils import instantiate
 import src.utils.registry as registry
 
+
 def next_power_of_2(x):
-    return 1 if x == 0 else 2**(x - 1).bit_length()
+    return 1 if x == 0 else 2 ** (x - 1).bit_length()
 
 
 class CheckpointedModule(torch.nn.Module):
@@ -339,6 +336,7 @@ class LMBackbone(nn.Module):
 
         if self.use_flashfftconv:
             from flashfftconv import FlashFFTConv
+
             # Chesterton's multiplication by two
             # I'm not sure why the times 2 is needed.
             # Not multiplying by two is faster and has the same loss score.

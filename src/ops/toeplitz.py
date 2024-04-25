@@ -1,4 +1,4 @@
-""" Utilities for computing convolutions.
+"""Utilities for computing convolutions.
 
 There are 3 equivalent views:
     1. causal convolution
@@ -7,7 +7,6 @@ There are 3 equivalent views:
 """
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 
 

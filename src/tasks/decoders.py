@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from einops import rearrange, reduce
 
 import src.models.nn.utils as U
@@ -212,9 +211,7 @@ class RetrievalHead(nn.Module):
         else:
             raise NotImplementedError
 
-        if (
-            self.nli
-        ):  # Architecture from https://github.com/mlpen/Nystromformer/blob/6539b895fa5f798ea0509d19f336d4be787b5708/reorganized_code/LRA/model_wrapper.py#L74
+        if self.nli:  # Architecture from https://github.com/mlpen/Nystromformer/blob/6539b895fa5f798ea0509d19f336d4be787b5708/reorganized_code/LRA/model_wrapper.py#L74
             self.classifier = nn.Sequential(
                 nn.Linear(4 * d_input, d_model),
                 activation_fn,
@@ -256,7 +253,7 @@ class RetrievalDecoder(Decoder):
         nli=True,
         activation="relu",
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         if d_model is None:

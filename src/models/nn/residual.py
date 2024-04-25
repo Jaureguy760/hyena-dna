@@ -1,4 +1,4 @@
-""" Implementations of different types of residual functions. """
+"""Implementations of different types of residual functions."""
 
 import torch
 from torch import nn

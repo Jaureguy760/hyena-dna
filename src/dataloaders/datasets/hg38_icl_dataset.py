@@ -1,18 +1,9 @@
-from itertools import islice
-from functools import partial
-
 # import tensorflow as tf
-import os
-import functools
-import json
 from pathlib import Path
 from pyfaidx import Fasta
-import polars as pl
 import pandas as pd
 import torch
 from random import randrange, random, randint
-import numpy as np
-from src.dataloaders.datasets.hg38_char_tokenizer import CharacterTokenizer
 
 
 """
@@ -65,7 +56,7 @@ class FastaInterval:
         max_length=None,
         return_seq_indices=False,
         shift_augs=None,
-        rc_aug=False
+        rc_aug=False,
     ):
         fasta_file = Path(fasta_file)
         assert fasta_file.exists(), "path to fasta file must exist"
@@ -133,7 +124,6 @@ class FastaInterval:
 
 
 class ICL_HG38Dataset(torch.utils.data.Dataset):
-
     """
     Loop thru bed file, retrieve (chr, start, end), query fasta file for sequence.
     Returns a generator that retrieves the sequence.

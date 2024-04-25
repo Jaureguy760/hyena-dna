@@ -3,8 +3,6 @@ import torch
 from random import random
 from pathlib import Path
 
-from src.dataloaders.datasets.hg38_char_tokenizer import CharacterTokenizer
-
 
 def coin_flip():
     return random() > 0.5
@@ -36,7 +34,6 @@ def string_reverse_complement(seq):
 
 
 class NucleotideTransformerDataset(torch.utils.data.Dataset):
-
     """
     Loop thru fasta file for sequence.
     Returns a generator that retrieves the sequence.
