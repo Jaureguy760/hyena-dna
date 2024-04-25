@@ -1,0 +1,14 @@
+exclude = [
+    "evals/",
+    "src/ops",
+    "src/tasks",
+    "src/utils",
+    "standalone_hyenadna.py",
+    "huggingface.py",
+    "src/dataloaders",
+    "src/models",
+]
+
+[lint]
+fixable = ["ALL"]
+ignore = ["E402"]
