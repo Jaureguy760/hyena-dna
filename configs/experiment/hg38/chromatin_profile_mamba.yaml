@@ -24,7 +24,10 @@ task:
     # label_smoothing: 0.1
   # pass in list of k's
   # last_k_ppl: null
-  torchmetrics: null  # torchmetrics for this task don't work currently
+  torchmetrics:
+    - deepsea_tf
+    - deepsea_dhs
+    - deepsea_hm
 
 trainer:
   accelerator: gpu
@@ -61,6 +64,7 @@ train:
   remove_test_loader_in_eval: False
   pretrained_model_strict_load: False # false allows encoder/decoder to be used if new model uses it
   # for loading backbone and not head, requires both of these flags below
+  pretrained_model_path: null
   #pretrained_model_path: /home/callum/private/hyena/safari-internal-inf/layer2_seq1024/loss.ckpt
   pretrained_model_state_hook:
     _name_: load_backbone

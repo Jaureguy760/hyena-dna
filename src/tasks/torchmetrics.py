@@ -3,12 +3,16 @@
 # Also adapted from https://github.com/Lightning-AI/metrics/blob/master/src/torchmetrics/text/perplexity.py
 # But we pass in the loss to avoid recomputation
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List, Tuple, Callable
+import numpy as np
+from sklearn.metrics import f1_score, roc_auc_score
+from functools import partial
 
 import torch
 import torch.nn.functional as F
 from torch import Tensor
 from torchmetrics import Metric
+from torchmetrics.classification import MultilabelAUROC
 
 try:
     from flash_attn.losses.cross_entropy import CrossEntropyLoss
@@ -127,7 +131,58 @@ class NumTokens(Metric):
         return self.compute()
 
 
+# grouped AUROC
+group_idx_ranges = {
+    'TF': (0, 690),
+    'DHS': (690, 815),
+    'HM': (815, 919)
+}
+
+
+class DeepSeaAUROCWrapper(Metric):
+    is_differentiable = False
+    higher_is_better = True
+    full_state_update = False
+
+    def __init__(self, metric: MultilabelAUROC, idx_range: Tuple[int, int]) -> None:
+        super().__init__(compute_on_cpu=True, compute_on_step=False)
+        self.metric = metric
+        self.idx_range = idx_range
+
+    def forward(self, preds: Tensor, target: Tensor) -> None:
+        self.metric.forward(*self._filter_by_range(preds, target))
+
+    def update(self, preds: Tensor, target: Tensor) -> None:
+        self.metric.update(*self._filter_by_range(preds, target))
+
+    def compute(self) -> Tensor:
+        return self.metric.compute()
+
+    def reset(self) -> None:
+        self.metric.reset()
+
+    def _filter_by_range(self, preds: Tensor, target: Tensor):
+        return preds[..., self.idx_range[0]:self.idx_range[1]], target[..., self.idx_range[0]:self.idx_range[1]]
+
+    def _wrap_update(self, update: Callable) -> Callable:
+        """Overwrite to do nothing, because the default wrapped functionality is handled by the wrapped metric."""
+        return update
+
+    def _wrap_compute(self, compute: Callable) -> Callable:
+        """Overwrite to do nothing, because the default wrapped functionality is handled by the wrapped metric."""
+        return compute
+
+
+deepsea_metrics = {
+    k: partial(DeepSeaAUROCWrapper, MultilabelAUROC(v[1]-v[0], average="macro", thresholds=1024, compute_on_cpu=True, compute_on_step=False), v)
+    for k, v in group_idx_ranges.items()
+}
+
+
 torchmetric_fns = {
     "perplexity": Perplexity,
     "num_tokens": NumTokens,
+    "deepsea_tf": deepsea_metrics['TF'],
+    "deepsea_dhs": deepsea_metrics['DHS'],
+    "deepsea_hm": deepsea_metrics['HM'],
 }

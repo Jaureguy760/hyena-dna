@@ -46,6 +46,7 @@ class BaseTask:
         loss_val=None,
         metrics=None,
         torchmetrics=None,
+        disable_train_torchmetrics: bool = False,
     ):
         """This class is allowed to grab attributes directly off a constructed dataset and model object"""
         self.dataset = dataset
@@ -70,7 +71,10 @@ class BaseTask:
             self.loss_val = instantiate(M.output_metric_fns, loss_val, partial=True)
             self.loss_val = U.discard_kwargs(self.loss_val)
         torchmetrics = MetricCollection(self._init_torchmetrics())
-        self.train_torchmetrics = torchmetrics.clone(prefix="train/")
+        if disable_train_torchmetrics:
+            self.train_torchmetrics = MetricCollection(dict())
+        else:
+            self.train_torchmetrics = torchmetrics.clone(prefix="train/")
         self.val_torchmetrics = torchmetrics.clone(prefix="val/")
         self.test_torchmetrics = torchmetrics.clone(prefix="test/")
 
